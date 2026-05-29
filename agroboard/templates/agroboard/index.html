@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AgroSat Intelligence Dashboard</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <!-- Our CSS -->
+  <link rel="stylesheet" href="{% static 'agroboard/css/style.css' %}"/>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h1>🛰 AgroSat Intelligence Dashboard</h1>
+  <div class="meta">
+    <span class="live-dot"></span>Live Data · Punjab Farm · Lahore Region
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ALERT BAR -->
+  <div class="alert-box">
+    <h2>⚡ Farm Status Alerts</h2>
+    <div class="alerts" id="alertBar">
+      <span class="alert-item alert-ok">Loading...</span>
+    </div>
+  </div>
+
+  <!-- TOP ROW: MAP + INDEX CARDS -->
+  <div class="grid-top">
+
+    <div class="card">
+      <h2>🗺 Farm Polygon Map</h2>
+      <div id="map"></div>
+    </div>
+
+    <div class="card">
+      <h2>📡 Live Spectral Indices</h2>
+      <div class="indices-grid" id="indicesGrid"></div>
+      <div class="weather-row"  id="weatherRow"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM ROW: CHARTS -->
+  <div class="grid-bottom">
+    <div class="card">
+      <h2>📈 NDVI Trend (30 days)</h2>
+      <div id="ndviChart" class="chart-box"></div>
+    </div>
+    <div class="card">
+      <h2>💧 NDMI Moisture Trend</h2>
+      <div id="ndmiChart" class="chart-box"></div>
+    </div>
+    <div class="card">
+      <h2>🌡 LST Temperature Trend</h2>
+      <div id="lstChart" class="chart-box"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  AgroSat Intelligence Platform · Mansab Ali · AI/ML Trainee · NetSol Technologies · Data: Open-Meteo API
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Plotly JS -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<!-- Our JS -->
+<script src="{% static 'agroboard/js/main.js' %}"></script>
+
+</body>
+</html>
