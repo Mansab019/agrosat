@@ -34,17 +34,30 @@
   </div>
 
   <!-- TOP ROW: MAP + INDEX CARDS -->
-  <div class="grid-top">
+  <div class="grid-top" style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; width:100%;">
 
-    <div class="card">
+    <div class="card" style="width:100%; min-width:0; overflow:hidden;">
       <h2>🗺 Farm Polygon Map</h2>
-      <div id="map"></div>
+      <div id="map" style="height:380px; width:100%;"></div>
     </div>
+    
 
-    <div class="card">
+    <div class='card'>
       <h2>📡 Live Spectral Indices</h2>
       <div class="indices-grid" id="indicesGrid"></div>
       <div class="weather-row"  id="weatherRow"></div>
+
+      <!-- CNN Classification Result -->
+      <div id="cnnResult" style="margin-top: 16px; display: none;">
+        <div style="font-size: 13px; color: #8B949E; text-transform: uppercase;
+            letter-spacing: 1px; margin-bottom: 10px;">
+          🤖 CNN Land Classification
+        </div>
+        <div id="cnnCards" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+        <div style="font-size: 10px; color: #8B949E; margin-top: 8px;">
+          Model: google/vit-base-patch16-224 · Source: HuggingFace
+        </div>
+      </div>
     </div>
 
   </div>

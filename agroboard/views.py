@@ -4,6 +4,11 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 import random
+import os
+import base64
+import requests
+from io import BytesIO
+from PIL import Image
 
 # ── Farm polygon (Punjab, Pakistan — sample wheat farm) ──────────────────────
 FARM_POLYGON = [
@@ -24,9 +29,12 @@ def index(request):
 def api_indices(request):
     # Fetch real weather data from Open-Meteo (no API key needed)
     try:
+        lat = request.GET.get('lat', '31.5214')
+        lon = request.GET.get('lon', '74.3597')
+
         url = (
             "https://api.open-meteo.com/v1/forecast"
-            "?latitude=31.5214&longitude=74.3597"
+            f"?latitude={lat}&longitude={lon}"
             "&current=temperature_2m,relative_humidity_2m,"
             "soil_moisture_0_to_1cm,et0_fao_evapotranspiration"
             "&daily=temperature_2m_max,precipitation_sum"
@@ -115,4 +123,67 @@ def api_timeseries(request):
         'ndvi':  ndvi_series,
         'ndmi':  ndmi_series,
         'lst':   lst_series,
+    })
+    
+    # ── 4. API: CNN Land Classification ──────────────────────────────────────────
+def api_classify(request):
+    lat = request.GET.get('lat', '31.5214')
+    lon = request.GET.get('lon', '74.3597')
+    
+    try:
+        # Fetch satellite tile image for this location
+        zoom = 15
+        # Convert lat/lon to tile coordinates
+        import math
+        lat_r = math.radians(float(lat))
+        n = 2 ** zoom
+        x_tile = int((float(lon) + 180.0) / 360.0 * n)
+        y_tile = int((1.0 - math.asinh(math.tan(lat_r)) / math.pi) / 2.0 * n)
+        
+        # Fetch Esri satellite tile
+        tile_url = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{zoom}/{y_tile}/{x_tile}"
+        tile_response = requests.get(tile_url, timeout=10)
+        
+        # Convert to PIL Image and resize for model
+        img = Image.open(BytesIO(tile_response.content)).convert('RGB')
+        img = img.resize((224, 224))
+        
+        # Convert to base64 for HuggingFace API
+        buffer = BytesIO()
+        img.save(buffer, format='JPEG')
+        img_bytes = buffer.getvalue()
+        
+        # Call HuggingFace Inference API
+        hf_token = os.getenv('HF_TOKEN')
+        hf_url = "https://router.huggingface.co/hf-inference/models/google/vit-base-patch16-224"
+        
+        hf_response = requests.post(
+            hf_url,
+            headers={"Authorization": f"Bearer {hf_token}"},
+            data=img_bytes,
+            timeout=15
+        )
+        
+        result = hf_response.json()
+        
+        # Extract top 3 classifications
+        if isinstance(result, list):
+            top3 = result[:3]
+            classifications = [
+                {
+                    'label': item['label'],
+                    'confidence': round(item['score'] * 100, 1)
+                }
+                for item in top3
+            ]
+        else:
+            classifications = [{'label': 'Unknown', 'confidence': 0}]
+            
+    except Exception as e:
+        classifications = [{'label': f'Error: {str(e)}', 'confidence': 0}]
+    
+    return JsonResponse({
+        'lat': lat,
+        'lon': lon,
+        'classifications': classifications
     })
