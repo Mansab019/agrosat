@@ -9,6 +9,7 @@ import base64
 import requests
 from io import BytesIO
 from PIL import Image
+import math
 
 # ── Farm polygon (Punjab, Pakistan — sample wheat farm) ──────────────────────
 FARM_POLYGON = [
@@ -50,6 +51,48 @@ def api_indices(request):
     except Exception:
         # Fallback if API is down
         temp, humidity, soil_moist = 34.0, 55.0, 0.18
+        
+    # Derive location-sensitive index values
+    # Using more weather variables for spatial variation
+
+    lat_f = float(lat)
+    lon_f = float(lon)
+
+    # NDVI: vegetation index — driven by humidity + soil + small lat/lon variation
+    # lat/lon add spatial uniqueness so nearby points differ slightly
+    ndvi = round(min(0.85, max(0.1,
+        0.25
+        + (humidity / 250)
+        + (soil_moist * 2.0)
+        + (math.sin(lat_f * 10) * 0.04)
+        + (math.cos(lon_f * 10) * 0.03)
+    )), 2)
+
+    # EVI: enhanced vegetation — slightly lower than NDVI
+    evi = round(min(0.80, max(0.1, ndvi * 0.87 + (math.cos(lat_f * 7) * 0.02))), 2)
+
+    # NDMI: moisture index — soil moisture dominant driver
+    ndmi = round(min(0.6, max(-0.3,
+        soil_moist * 3.0
+        - 0.15
+        + (math.sin(lon_f * 8) * 0.03)
+    )), 2)
+
+    # NDWI: surface water — very low unless flooded
+    ndwi = round(min(0.4, max(-0.4,
+        soil_moist * 2.0
+        - 0.3
+        + (math.cos(lat_f * 12) * 0.02)
+    )), 2)
+
+    # LST: land surface temp — driven by air temp + lat variation
+    lst = round(temp + 3.5 + (math.sin(lat_f * 5) * 1.5) + (math.cos(lon_f * 6) * 1.2), 1)
+
+    # SAR-RVI: radar biomass
+    sar_rvi = round(min(0.9, max(0.1,
+        ndvi * 0.82
+        + (math.sin(lat_f * 9) * 0.03)
+    )), 2)
 
     # Derive realistic index values from real weather data
     # NDVI: healthy crops in Pakistan range 0.4–0.8
